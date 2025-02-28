@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { getSpotifyApi } from './utils/spotify';
 import Login from './components/Login';
@@ -16,10 +16,10 @@ function App() {
         const api = await getSpotifyApi();
         setSpotifyApi(api);
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erro ao inicializar Spotify:', err);
         // Mensagem de erro mais específica
-        const errorMessage = err.message?.includes('CLIENT_ID não configurado')
+        const errorMessage = (err as Error).message?.includes('CLIENT_ID não configurado')
           ? 'É necessário configurar o CLIENT_ID do Spotify. Verifique o arquivo .env ou src/utils/spotify.ts.'
           : 'Falha ao conectar com o Spotify. Por favor, tente novamente.';
         setError(errorMessage);
@@ -55,7 +55,7 @@ function App() {
               <li>Adicione {window.location.origin} como URI de redirecionamento no painel do Spotify</li>
             </ol>
           </div>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
           >

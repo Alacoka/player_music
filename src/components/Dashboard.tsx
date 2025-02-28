@@ -23,15 +23,18 @@ const Dashboard: React.FC<DashboardProps> = ({ spotifyApi }) => {
       try {
         const userData = await spotifyApi.currentUser.profile();
         setUser(userData);
-        
+
         const playlistsData = await spotifyApi.currentUser.playlists.playlists();
-        setPlaylists(playlistsData.items);
-        
+        setPlaylists(playlistsData.items.map(item => ({
+          ...item,
+          tracks: { total: item.tracks?.total || 0 }
+        } as SpotifyPlaylist)));
+
         if (playlistsData.items.length > 0) {
           const firstPlaylist = playlistsData.items[0];
           setSelectedPlaylistId(firstPlaylist.id);
           setPlaylistName(firstPlaylist.name);
-          
+
           const tracksData = await spotifyApi.playlists.getPlaylistItems(firstPlaylist.id);
           setTracks(tracksData.items.map(item => item.track as SpotifyTrack));
         }
@@ -39,46 +42,46 @@ const Dashboard: React.FC<DashboardProps> = ({ spotifyApi }) => {
         console.error('Erro ao buscar dados do usuário:', error);
       }
     };
-    
+
     fetchUserData();
   }, [spotifyApi]);
-  
+
   const handlePlaylistSelect = async (playlistId: string) => {
     try {
       setSelectedPlaylistId(playlistId);
-      
+
       const selectedPlaylist = playlists.find(p => p.id === playlistId);
       if (selectedPlaylist) {
         setPlaylistName(selectedPlaylist.name);
       }
-      
+
       const tracksData = await spotifyApi.playlists.getPlaylistItems(playlistId);
       setTracks(tracksData.items.map(item => item.track as SpotifyTrack));
     } catch (error) {
       console.error('Erro ao buscar faixas da playlist:', error);
     }
   };
-  
+
   const handleTrackSelect = (track: SpotifyTrack) => {
     setCurrentTrack(track);
     setIsPlaying(true);
   };
-  
+
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
-  
+
   const handleNext = () => {
     if (!currentTrack || tracks.length === 0) return;
-    
+
     const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % tracks.length;
     setCurrentTrack(tracks[nextIndex]);
   };
-  
+
   const handlePrevious = () => {
     if (!currentTrack || tracks.length === 0) return;
-    
+
     const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
     const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
     setCurrentTrack(tracks[prevIndex]);
@@ -86,13 +89,13 @@ const Dashboard: React.FC<DashboardProps> = ({ spotifyApi }) => {
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-      <Sidebar 
-        user={user} 
-        playlists={playlists} 
+      <Sidebar
+        user={user}
+        playlists={playlists}
         onPlaylistSelect={handlePlaylistSelect}
         selectedPlaylistId={selectedPlaylistId}
       />
-      
+
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="p-6 bg-gradient-to-b from-green-900 to-gray-900">
           <h1 className="text-3xl font-bold mb-4">{playlistName}</h1>
@@ -100,16 +103,16 @@ const Dashboard: React.FC<DashboardProps> = ({ spotifyApi }) => {
             <p className="text-gray-300">{tracks.length} músicas</p>
           )}
         </div>
-        
-        <TrackList 
-          tracks={tracks} 
+
+        <TrackList
+          tracks={tracks}
           onTrackSelect={handleTrackSelect}
           currentTrackId={currentTrack?.id || null}
         />
       </div>
-      
+
       <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4">
-        <Player 
+        <Player
           currentTrack={currentTrack}
           isPlaying={isPlaying}
           onPlayPause={handlePlayPause}
